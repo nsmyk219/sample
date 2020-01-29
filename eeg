@@ -1,0 +1,86 @@
+% A) within documents folder UndBot, create ### folder
+% 1. copy and paste ###Ubot.asc and ###Ubot.win within folder
+   % B) make sure your location file (35 locs) is in the UndBot folder
+
+% 2. in this script, replace 716 with your participant number. run until 3, plot/epoch rejection.
+
+%import data file
+[ALLEEG EEG CURRENTSET ALLCOM] = eeglab;
+EEG = pop_importdata('dataformat','ascii','nbchan',0,'data','C:\\Users\\tuf93729\\Documents\\UndBot\\716\\716UBOT.ASC','setname','716','srate',512,'subject','716','pnts',0,'xmin',0);
+
+%read location file and reference to CZ
+EEG=pop_chanedit(EEG, 'lookup','C:\\Users\\tuf93729\\Documents\\UndBot\\standard-10-5-cap385.elp','load',{'C:\\Users\\tuf93729\\Documents\\undbot\\35 chan.locs' 'filetype' 'autodetect'},'append',35,'changefield',{36 'labels' 'CZ'},'lookup','C:\\Users\\tuf93729\\Documents\\UndBot\\standard-10-5-cap385.elp','setref',{'1:35' 'Cz'});
+[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+
+%rereference to M1 & M2
+EEG = pop_reref( EEG, [17 22] ,'refloc',struct('labels',{'CZ'},'type',{''},'theta',{0},'radius',{0},'X',{5.2047e-15},'Y',{0},'Z',{85},'sph_theta',{0},'sph_phi',{90},'sph_radius',{85},'urchan',{36},'ref',{''},'datachan',{0}),'keepref','on');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 1,'setname','716ref','savenew','716ref','gui','off'); 
+
+%import event file
+EEG = eeg_checkset( EEG );
+EEG = pop_importevent( EEG, 'event','C:\\Users\\tuf93729\\Documents\\undbot\\716\\716UBOT.WIN','fields',{'latency' 'duration' 'type'},'timeunit',1,'optimalign','off');
+[ALLEEG EEG] = eeg_store(ALLEEG, EEG, CURRENTSET);
+
+%delete event and respiration channels
+EEG = eeg_checkset( EEG );
+EEG = pop_select( EEG,'channel',{'EOG1' 'EOG2' 'Fp1' 'Fpz' 'Fp2' 'F7' 'F3' 'Fz' 'F4' 'F8' 'FC5' 'FC1' 'FC2' 'FC6' 'M1' 'T7' 'C3' 'C4' 'T8' 'M2' 'CP5' 'CP1' 'CP2' 'CP6' 'P7' 'P3' 'Pz' 'P4' 'P8' 'POz' 'O1' 'Oz' 'O2' 'CZ'});
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 2,'savenew','716ready','gui','off'); 
+EEG = eeg_checkset( EEG );
+
+%create a file with all relevant epochs, stim = 0 
+EEG = pop_epoch( EEG, {  'none_stim'  'other_stim'  'robot_other_stim'  'robot_self_stim'  'self_stim'  }, [-2.5           1], 'newname', '716allstim', 'epochinfo', 'yes');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 3,'savenew','716allstim','gui','off'); 
+EEG = eeg_checkset( EEG );
+EEG = pop_rmbase( EEG, [-2500 -2000]);
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 4,'savenew','716allstimB','gui','off'); 
+
+
+%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%STOP%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
+
+%    3. plot > channel data (scroll) to reject bad epochs, but if there is a bad channel,  
+%%        interpolate it FIRST, then delete bad epochs. save as ###allstimClean
+%%%%      C) tools > inteploating, select bad channels, spherical is okay.
+%%%%      look for thick or noisy channels. if you interpolate, EXCLUDE from ICA (along w/ M1 M2)
+%%%%      save but do NOT rename set or file, this will mess ERYTHING up, cancel when prompted
+%    4. tools > run ICA. use the down arrow twice to select 'jader'. 
+%%%%     to select electordes, click on the ... and select all EXCEPT M1 and M2. others highlighted blue, those white.
+%%%%     save as ###allstimCleanICA
+
+%      this took literally 10 minutes when I did it. to
+%      to confirm it's done successfully, file should say Yes by Channel locations in dataset 6.
+
+
+%    5. run the  following to save as seperate epochs
+EEG = pop_epoch( EEG, {  'self_stim'  }, [-2.5           1], 'newname', '716self', 'epochinfo', 'yes');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 7,'setname','716self','savenew','716self','gui','off'); 
+EEG = eeg_checkset( EEG );
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 7,'retrieve',6,'study',0); 
+
+EEG = pop_epoch( EEG, {  'none_stim'  }, [-2.5           1], 'newname', '716none', 'epochinfo', 'yes');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 8,'setname','716none','savenew','716none','gui','off'); 
+EEG = eeg_checkset( EEG );
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 8,'retrieve',6,'study',0); 
+
+EEG = pop_epoch( EEG, {  'other_stim'  }, [-2.5           1], 'newname', '716other', 'epochinfo', 'yes');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 9,'setname','716other','savenew','716other','gui','off'); 
+EEG = eeg_checkset( EEG );
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 9,'retrieve',6,'study',0); 
+
+EEG = pop_epoch( EEG, {  'robot_other_stim'  }, [-2.5           1], 'newname', '716robother', 'epochinfo', 'yes');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 10,'setname','716robother','savenew','716robother','gui','off'); 
+EEG = eeg_checkset( EEG );
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 10,'retrieve',6,'study',0); 
+
+EEG = pop_epoch( EEG, {  'robot_self_stim'  }, [-2.5           1], 'newname', '716robself', 'epochinfo', 'yes');
+[ALLEEG EEG CURRENTSET] = pop_newset(ALLEEG, EEG, 11,'setname','716robself','savenew','716robself','gui','off'); 
+EEG = eeg_checkset( EEG ); 
+
+% 6. move resulting files (in matlab folder) to share drive in files
+% "processed" within S;/data/UndBot. create folder of ###.
+% take steps 1-6(ready ref allstim allstimB allstimBClean allstimBCleanICA)
+% and move to folder within, named 'prep'. leave the conditions/finalized
+% files in the ### folder. % files in the ### folder. remember to annotate
+% interpolation!
+
+
+%%% 
