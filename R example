@@ -1,0 +1,172 @@
+setwd("E:/MMN/ERPtexts")
+
+list.files()
+
+test1<-read.table("702FD1",header=TRUE)
+
+time000<-read.table("702FD1",header=FALSE, skip=1,col.names =c("time", "Fp1","Fpz","Fp2","F7","F3","Fz","F4","F8","FC5","FC1","FC2","FC6","M1","T7","C3","C4","T8","M2","CP5","CP1","CP2","CP6","P7","P3","Pz","P4","P8","POz","O1","Oz","O2","Cz" ))
+Time<-time000$time
+
+list.files()
+all.files = list.files(pattern="7")
+data1<-data.frame()
+for(file in all.files){
+  data=read.table(file,header=FALSE, skip=1,col.names =c("time","Fp1","Fpz","Fp2","F7","F3","Fz","F4","F8","FC5","FC1","FC2","FC6","M1","T7","C3","C4","T8","M2","CP5","CP1","CP2","CP6","P7","P3","Pz","P4","P8","POz","O1","Oz","O2","Cz" ))
+  data1=rbind(data1,data.frame(data,file=file))
+}
+
+data1=within(data1,{
+  time2<-rep(Time)
+  partic = sapply(data1$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=1, stop=3)})
+  stim = sapply(data1$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=4, stop=4)})
+  type = sapply(data1$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=5, stop=5)})
+  D = sapply(data1$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=6, stop=6)})
+  condition = sapply(data1$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=5, stop=6)})
+})
+
+
+###==== indi plot   
+
+F<-subset(data1,stim=="F")
+S<-subset(data1,stim=="S")
+
+#dev.new()
+#par(mfcol=c(1,2), mar=c(5,4,4,2), pch=20)
+
+FD1<-function(x,y){
+  #dev.new()
+  subject<-subset(F,partic==x)
+  subject<-subset(subject, time2<300)
+  whole<-subset(subject,D==1)
+  St<-subset(whole,type=="S")
+  Dv<-subset(whole,type=="D")
+  
+  graph<- {
+    plot(St$time2,St[,y],type="l",col="black",ylim=c(-10,15),lty=1,main=c("Finger-Middle",x,y),lwd=2,ylab="amplitude", xlab="time")
+    points(Dv$time2,Dv[,y],type="l",col="red",lty=1,lwd=2)
+    axis(side=1,at=seq(-100,300,by=50))
+    abline(v=0,col="gray")
+    abline(h=0,col="gray")}
+  return(graph)
+}
+
+FD2<-function(x,y){
+  #dev.new()
+  subject<-subset(F,partic==x)
+  subject<-subset(subject, time2<300)
+  whole<-subset(subject,D==2)
+  St<-subset(whole,type=="S")
+  Dv<-subset(whole,type=="D")
+  
+  graph<- {
+    plot(St$time2,St[,y],type="l",col="black",ylim=c(-10,15),lty=1,main=c("Finger-pinky",x,y),lwd=2,ylab="amplitude", xlab="time")
+    points(Dv$time2,Dv[,y],type="l",col="red",lty=1,lwd=2)
+    axis(side=1,at=seq(-100,300,by=50))
+    abline(v=0,col="gray")
+    abline(h=0,col="gray")}
+  return(graph)
+}
+
+FD<-function(x){
+  dev.new()
+  par(mfcol=c(4,2), mar=c(5,4,4,2), pch=20)
+  graphs<-{
+    FD1(x,"FC1")
+    FD1(x,"FC5")
+    FD1(x,"F3")
+    FD1(x,"C3")
+    FD2(x,"FC1")
+    FD2(x,"FC5")
+    FD2(x,"F3")
+    FD2(x,"C3")
+  }
+  return(graphs)
+}
+
+FD(716)
+
+
+######################### Grand average ########################################## grand average ------- finger 
+
+######################### Grand average ########################################################################################
+
+
+AFD1<-function(x){
+  #dev.new()
+  F1<-subset(F, time2<400)
+  F1<-subset(F1,D==1)
+  cha=data.frame(F1$time2,F1$partic,F1$type,F1[,x])
+  colnames(cha)=c("time","partic","type","amp")
+  St<-subset(cha,type=="S")
+  Dv<-subset(cha,type=="D")
+  ST<-tapply(St$amp,St$time,mean)
+  DV<-tapply(Dv$amp,Dv$time,mean)
+  whole<-subset(St,partic=="702")
+  Time<-whole$time
+  graph<- {
+    plot(Time,ST,type="l",col="black",bty ="n",xaxt='n',ylim=c(-3,8),lty=1,main=c("Finger-Middle",x),lwd=2,ylab="amplitude (??V)", xlab="time (ms)")
+    points(Time,DV,type="l",col="red",lty=1,lwd=2)
+    axis(side=1,at=seq(-100,400,by=50))
+    axis(side=2,at=seq(-3,8,by=1))
+    abline(v=0,col="gray")
+    abline(h=0,col="gray")}
+  return(graph)
+}
+
+
+AFD2<-function(x,y){
+  #dev.new()
+  F1<-subset(F, time2<400)
+  F1<-subset(F1,D==2)
+  cha=data.frame(F1$time2,F1$partic,F1$type,F1[,x])
+  colnames(cha)=c("time","partic","type","amp")
+  St<-subset(cha,type=="S")
+  Dv<-subset(cha,type=="D")
+  ST<-tapply(St$amp,St$time,mean)
+  DV<-tapply(Dv$amp,Dv$time,mean)
+  whole<-subset(St,partic=="702")
+  Time<-whole$time
+  graph<- {
+    plot(Time,ST,type="l",col="black",ylim=c(-3,8),bty ="n",xaxt='n',lty=1,main=c("Finger-little",x),lwd=2,ylab="amplitude (??V)", xlab="time (ms)")
+    points(Time,DV,type="l",col="red",lty=1,lwd=2)
+    axis(side=1,at=seq(-100,400,by=50))
+    axis(side=2,at=seq(-3,8,by=1))
+    abline(v=0,col="gray")
+    abline(h=0,col="gray")}
+  return(graph)
+}
+
+
+dev.new()
+par(mfcol=c(4,2), mar=c(5,4,4,2), pch=20)
+
+AFD1("Fz")
+AFD1("FC1")
+AFD1("FC5")
+AFD1("C3")
+AFD2("Fz")
+AFD2("FC1")
+AFD2("FC5")
+AFD2("C3")
+
+##########################################
+################################################ average across the same time window 
+
+
+list.files()
+all.files = list.files(pattern="txt")
+
+dataM<-data.frame()
+for(file in all.files){
+  data=read.table(file,header=FALSE)
+  dataM=rbind(dataM,data.frame(power=mean(apply(data[51:100,53:94],1,mean)),file=file))  
+  #8-14  53:94  #10-12  70:83  ## TimeL:300-500 59:88  time 205ms 44  time 250-550  51:96  time 36--- 150ms
+}
+
+dataM=within(dataM,{
+  partic = sapply(dataM$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=1, stop=3)})
+  stim = sapply(dataM$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=6, stop=7)}) 
+  sound = sapply(dataM$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=8, stop=9)}) 
+  electrode = sapply(dataM$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=4, stop=5)}) 
+  condition = sapply(dataM$file, function(x) {substr(strsplit(as.character(x), split="\\.")[[1]][[1]], start=6, stop=9)})})
+
